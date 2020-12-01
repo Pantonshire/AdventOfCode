@@ -21,4 +21,7 @@ clean-go:
 clean-haskell:
 	rm $(HS_EXEC) $(HS_SRC)/*.hi $(HS_SRC)/*.o
 
-.PHONY: go haskell clean clean-go clean-haskell
+bench-go:
+	go test -run=Bench -bench=. ./go
+
+.PHONY: go haskell clean clean-go clean-haskell bench-go
