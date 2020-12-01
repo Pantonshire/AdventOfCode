@@ -16,33 +16,52 @@ const target = 2020
 
 type empty struct{}
 
+type res2 struct {
+  i0, i1 int
+}
+
+type res3 struct {
+  i0, i1, i2 int
+}
+
 func main() {
   ns, err := readNumbers("input")
   if err != nil {
     panic(err)
   }
-  findTwo(10, ns)
-  fmt.Println("Done two")
-  findThree(10, ns)
-  fmt.Println("Done three")
+
+  for _, r := range findTwo(10, ns) {
+    n0, n1 := ns[r.i0], ns[r.i1]
+    sum, prod := n0+n1, n0*n1
+    fmt.Println(fmt.Sprintf("indices (%d,%d): %d + %d = %d, %d * %d = %d",
+      r.i0, r.i1, n0, n1, sum, n0, n1, prod))
+  }
+
+  for _, r := range findThree(20, ns) {
+    n0, n1, n2 := ns[r.i0], ns[r.i1], ns[r.i2]
+    sum, prod := n0+n1+n2, n0*n1*n2
+    fmt.Println(fmt.Sprintf("indices (%d,%d,%d): %d + %d + %d = %d, %d * %d * %d = %d",
+      r.i0, r.i1, r.i2, n0, n1, n2, sum, n0, n1, n2, prod))
+  }
 }
 
-func findTwo(gs int, ns []int) {
-  type res2 struct {
-    i0, i1 int
-  }
+func findTwo(gs int, ns []int) []res2 {
+  var results []res2
+
   inputs := make(chan int, gs)
   result := make(chan res2, 0)
   doneSem := make(chan empty, 1)
+
   wgSem := make(chan empty, 1)
   var wg sync.WaitGroup
+
   for gid := 0; gid < gs; gid++ {
     wg.Add(1)
     go func() {
+      defer wg.Done()
       for {
         i0, more := <-inputs
         if !more {
-          wg.Done()
           break
         }
         for i1 := 0; i1 < len(ns); i1++ {
@@ -53,45 +72,51 @@ func findTwo(gs int, ns []int) {
       }
     }()
   }
+
   go func() {
+    defer func() { doneSem <- empty{} }()
+    loop:
     for {
       select {
       case <-wgSem:
-        doneSem <- empty{}
-        break
+        break loop
       case r := <-result:
-        n0, n1 := ns[r.i0], ns[r.i1]
-        sum, prod := n0+n1, n0*n1
-        fmt.Println(fmt.Sprintf("indices (%d,%d): %d + %d = %d, %d * %d = %d",
-          r.i0, r.i1, n0, n1, sum, n0, n1, prod))
+        results = append(results, r)
       }
     }
   }()
+
   for i := 0; i < len(ns); i++ {
     inputs <- i
   }
   close(inputs)
+
   wg.Wait()
   wgSem <- empty{}
   <-doneSem
+
+  return results
 }
 
-func findThree(gs int, ns []int) {
-  type res3 struct {
-    i0, i1, i2 int
-  }
+func findThree(gs int, ns []int) []res3 {
+  var results []res3
+
   inputs := make(chan int, gs)
   result := make(chan res3, 0)
+
   doneSem := make(chan empty, 1)
+
   wgSem := make(chan empty, 1)
   var wg sync.WaitGroup
+
   for gid := 0; gid < gs; gid++ {
     wg.Add(1)
+
     go func() {
+      defer wg.Done()
       for {
         i0, more := <-inputs
         if !more {
-          wg.Done()
           break
         }
         for i1 := 0; i1 < len(ns); i1++ {
@@ -104,27 +129,30 @@ func findThree(gs int, ns []int) {
       }
     }()
   }
+
   go func() {
+    defer func() { doneSem <- empty{} }()
+    loop:
     for {
       select {
       case <-wgSem:
-        doneSem <- empty{}
-        break
+        break loop
       case r := <-result:
-        n0, n1, n2 := ns[r.i0], ns[r.i1], ns[r.i2]
-        sum, prod := n0+n1+n2, n0*n1*n2
-        fmt.Println(fmt.Sprintf("indices (%d,%d,%d): %d + %d + %d = %d, %d * %d * %d = %d",
-          r.i0, r.i1, r.i2, n0, n1, n2, sum, n0, n1, n2, prod))
+        results = append(results, r)
       }
     }
   }()
+
   for i := 0; i < len(ns); i++ {
     inputs <- i
   }
   close(inputs)
+
   wg.Wait()
   wgSem <- empty{}
   <-doneSem
+
+  return results
 }
 
 func readNumbers(path string) ([]int, error) {
