@@ -24,4 +24,4 @@ clean-haskell:
 bench-go:
 	go test -run=Bench -bench=. ./go
 
-.PHONY: go haskell clean clean-go clean-haskell bench-go
+.PHONY: all go haskell clean clean-go clean-haskell bench-go
