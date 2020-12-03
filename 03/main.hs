@@ -1,4 +1,3 @@
-
 data Tile = Empty | Tree
           deriving (Show, Eq)
 type Map = [[Tile]]
@@ -7,11 +6,21 @@ type Slope = (Int,Int)
 main :: IO ()
 main = readFile "input" >>= \contents ->
        let ls = filter (not . null) (lines contents) in
-       let mm = readMap ls in
-       let mp = (mm >>= \m -> return $ path (3,1) m) in
-       let mn = (mp >>= \p -> return $ trees p) in
-       putStrLn (show mp) >>
-       putStrLn (show mn)
+       let mrs = (readMap ls >>= \m -> return $ map ((flip toboggan) m) slopes) in
+       maybeIO putStrLns (mrs >>= \rs -> return $ map (\(s,r) -> show s ++ ": " ++ show r) (zip slopes rs)) >>
+       maybeIO putStrLn (mrs >>= \rs -> return (show (product rs)))
+     where slopes = [(1,1),(3,1),(5,1),(7,1),(1,2)]
+
+maybeIO :: Show a => (a -> IO ()) -> Maybe a -> IO ()
+maybeIO _ Nothing = pure ()
+maybeIO f (Just x) = f x
+
+putStrLns :: [String] -> IO ()
+putStrLns [] = pure ()
+putStrLns (l:ls) = putStrLn l >> putStrLns ls
+
+toboggan :: Slope -> Map -> Int
+toboggan s = trees . (path s)
 
 trees :: [Tile] -> Int
 trees ts = length (filter (== Tree) ts)
