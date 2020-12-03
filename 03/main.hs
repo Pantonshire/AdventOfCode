@@ -36,6 +36,7 @@ readMap ls = foldMaybes (map (foldMaybes . (map readTile)) ls) >>= \rs ->
 readTile :: Char -> Maybe Tile
 readTile '.' = Just Empty
 readTile '#' = Just Tree
+readTile _ = Nothing
 
 repeatList :: [a] -> [a]
 repeatList [] = []
