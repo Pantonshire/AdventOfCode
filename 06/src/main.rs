@@ -30,7 +30,7 @@ where
             let mut person_answers = 0;
             for c in person.chars() {
                 if 'a' <= c && c <= 'z' {
-                    let mask = 1 << (c as u32) - ('a' as u32);
+                    let mask = 1 << ((c as u32) - ('a' as u32));
                     any |= mask;
                     person_answers |= mask;
                 }
