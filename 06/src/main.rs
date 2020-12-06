@@ -8,23 +8,21 @@ fn main() {
                                      .map(|l| l.trim())
                                      .filter(|l| !l.is_empty()));
         
-    let (anyone, everyone) = read_all_groups_answers(groups);
+    let answers = read_all_groups_answers(groups);
 
-    let total_anyone = sum_all_groups_answers(&anyone);
+    let total_anyone = sum_all_groups_answers(answers.iter().map(|&(any,_)| any));
     println!("Total (anyone): {}", total_anyone);
 
-    let total_everyone = sum_all_groups_answers(&everyone);
+    let total_everyone = sum_all_groups_answers(answers.iter().map(|&(_,every)| every));
     println!("Total (everyone): {}", total_everyone);
 }
 
-fn read_all_groups_answers<'a, I, II>(groups: I) -> (Vec<u32>, Vec<u32>)
+fn read_all_groups_answers<'a, I, II>(groups: I) -> Vec<(u32, u32)>
 where
     II: Iterator<Item = &'a str>,
     I: Iterator<Item = II>,
 {
-    let mut anyone = Vec::new();
-    let mut everyone = Vec::new();
-
+    let mut answers = Vec::new();
     for group in groups {
         let mut any: u32 = 0;
         let mut every: u32 = 0xFFFFFFFF;
@@ -39,15 +37,13 @@ where
             }
             every &= person_answers;
         }
-        anyone.push(any);
-        everyone.push(every);
+        answers.push((any, every));
     }
-
-    (anyone, everyone)
+    answers
 }
 
-fn sum_all_groups_answers(answers: &[u32]) -> u32 {
-    answers.iter().map(|&x| sum_group_answers(x)).sum()
+fn sum_all_groups_answers<I: Iterator<Item = u32>>(answers: I) -> u32 {
+    answers.map(|x| sum_group_answers(x)).sum()
 }
 
 fn sum_group_answers(answers: u32) -> u32 {
