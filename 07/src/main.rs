@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-type Graph<'a> = HashMap<&'a str, Vec<(u32, &'a str)>>;
+type Graph<'a> = HashMap<String, Vec<(u32, &'a str)>>;
 
 const TARGET: &'static str = "shiny gold";
 
@@ -12,7 +12,7 @@ fn main() {
     let (graph, keys) = build_graph(lines)
         .expect("Failed to build graph");
     let contains_gold: u32 = keys.iter()
-        .map(|k| search(TARGET, k, &graph, &HashSet::new()))
+        .map(|k| search(TARGET, k, &graph, &mut HashSet::new()))
         .map(|x| if x { 1 } else { 0 })
         .sum();
     println!("Contains shiny gold: {}", contains_gold);
@@ -56,12 +56,12 @@ fn build_graph<'a, I: Iterator<Item=&'a str>>(lines: I) -> Option<(Graph<'a>, Ve
                 contains.push((n, ct));
             }
         }
-        graph.insert(bag_type, contains);
+        graph.insert(bag_type.to_owned(), contains);
     }
     Some((graph, keys))
 }
 
-fn search(target: &str, k: &str, graph: &HashMap<&str, Vec<(u32, &str)>>, visited: &HashSet<&str>) -> bool {
+fn search(target: &str, k: &str, graph: &Graph, visited: &mut HashSet<String>) -> bool {
     if visited.contains(k) {
         return false;
     }
@@ -73,9 +73,8 @@ fn search(target: &str, k: &str, graph: &HashMap<&str, Vec<(u32, &str)>>, visite
         if b.1.eq(target) {
             return true;
         } else {
-            let mut v = visited.clone();
-            v.insert(k);
-            if search(target, b.1, graph, &v) {
+            visited.insert(k.to_owned());
+            if search(target, b.1, graph, visited) {
                 return true;
             }
         }
@@ -83,7 +82,7 @@ fn search(target: &str, k: &str, graph: &HashMap<&str, Vec<(u32, &str)>>, visite
     false
 }
 
-fn count_contains(k: &str, graph: &HashMap<&str, Vec<(u32, &str)>>) -> u32 {
+fn count_contains(k: &str, graph: &Graph) -> u32 {
     match graph.get(k) {
         Some(bs) => bs.iter().map(|b| b.0 * (1 + count_contains(b.1, graph))).sum(),
         None => 0,
