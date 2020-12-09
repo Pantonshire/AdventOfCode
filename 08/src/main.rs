@@ -15,7 +15,7 @@ fn main() {
         .map(|l| read_instruction(l))
         .collect();
 
-    match run_program(instrs.clone()) {
+    match run_program(&instrs) {
         Ok(acc) => println!("Part 1: {}", acc.0),
         Err(e) => eprintln!("Error in part 1: {}", e),
     }
@@ -32,7 +32,7 @@ fn main() {
     }
 
     for i in 0..(instrs.len()) {
-        match run_program_transform(instrs.clone(), |(j,instr)| swap_instr(i, j, instr)) {
+        match run_program_transform(&instrs, |(j,instr)| swap_instr(i, j, instr)) {
             Ok((acc, true)) => {
                 println!("Part 2: {}", acc);
                 break;
@@ -43,11 +43,11 @@ fn main() {
     }
 }
 
-fn run_program<'a>(instrs: Vec<Result<Instr, &'a str>>) -> Result<(i32, bool), &'a str> {
+fn run_program<'a>(instrs: &Vec<Result<Instr, &'a str>>) -> Result<(i32, bool), &'a str> {
     run_program_transform(instrs, |(_,instr)| instr)
 }
 
-fn run_program_transform<'a, F>(instrs: Vec<Result<Instr, &'a str>>, transform: F) -> Result<(i32, bool), &'a str>
+fn run_program_transform<'a, F>(instrs: &Vec<Result<Instr, &'a str>>, transform: F) -> Result<(i32, bool), &'a str>
 where
     F: Fn((usize, Instr)) -> Instr,
 {
