@@ -29,15 +29,15 @@ fn main() {
     println!("Part 1: {}", part_1);
 
     // Need to solve the system of simultaneous equations:
-    // t mod 37 = 0
-    // t mod 41 = 14
+    // t mod 37  = 0
+    // t mod 41  = 14
     // t mod 457 = 420
-    // t mod 13 = 2
-    // t mod 17 = 0
-    // t mod 23 = 9
-    // t mod 29 = 21
+    // t mod 13  = 2
+    // t mod 17  = 0
+    // t mod 23  = 9
+    // t mod 29  = 21
     // t mod 431 = 363
-    // t mod 19 = 8
+    // t mod 19  = 8
 
     let part_2 = solve(&make_system(&buses));
     println!("Part 2: {}", part_2);
