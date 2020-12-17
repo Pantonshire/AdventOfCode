@@ -22,12 +22,12 @@ impl Point for Point3 {
         let (mut min_y, mut max_y) = (None, None);
         let (mut min_z, mut max_z) = (None, None);
         for (x,y,z) in ps {
-            min_x = Some(match min_x { None => x, Some(v) => if x < v { x } else { v }});
-            max_x = Some(match max_x { None => x, Some(v) => if x > v { x } else { v }});
-            min_y = Some(match min_y { None => y, Some(v) => if y < v { y } else { v }});
-            max_y = Some(match max_y { None => y, Some(v) => if y > v { y } else { v }});
-            min_z = Some(match min_z { None => z, Some(v) => if z < v { z } else { v }});
-            max_z = Some(match max_z { None => z, Some(v) => if z > v { z } else { v }});
+            min_x = min_opt(x, min_x);
+            max_x = max_opt(x, max_x);
+            min_y = min_opt(y, min_y);
+            max_y = max_opt(y, max_y);
+            min_z = min_opt(z, min_z);
+            max_z = max_opt(z, max_z);
         }
         (match (min_x, min_y, min_z) {
             (Some(x), Some(y), Some(z)) => Some((x-1,y-1,z-1)),
@@ -82,14 +82,14 @@ impl Point for Point4 {
         let (mut min_z, mut max_z) = (None, None);
         let (mut min_w, mut max_w) = (None, None);
         for (x,y,z,w) in ps {
-            min_x = Some(match min_x { None => x, Some(v) => if x < v { x } else { v }});
-            max_x = Some(match max_x { None => x, Some(v) => if x > v { x } else { v }});
-            min_y = Some(match min_y { None => y, Some(v) => if y < v { y } else { v }});
-            max_y = Some(match max_y { None => y, Some(v) => if y > v { y } else { v }});
-            min_z = Some(match min_z { None => z, Some(v) => if z < v { z } else { v }});
-            max_z = Some(match max_z { None => z, Some(v) => if z > v { z } else { v }});
-            min_w = Some(match min_w { None => w, Some(v) => if w < v { w } else { v }});
-            max_w = Some(match max_w { None => w, Some(v) => if w > v { w } else { v }});
+            min_x = min_opt(x, min_x);
+            max_x = max_opt(x, max_x);
+            min_y = min_opt(y, min_y);
+            max_y = max_opt(y, max_y);
+            min_z = min_opt(z, min_z);
+            max_z = max_opt(z, max_z);
+            min_w = min_opt(w, min_w);
+            max_w = max_opt(w, max_w);
         }
         (match (min_x, min_y, min_z, min_w) {
             (Some(x), Some(y), Some(z), Some(w)) => Some((x-1,y-1,z-1,w-1)),
@@ -209,4 +209,18 @@ fn run_automata<T: Point>(starting_cells: &Vec<Vec<bool>>, cycles: usize) -> Opt
         space = new_space;
     }
     Some(space.len())
+}
+
+fn min_opt(x: i64, oy: Option<i64>) -> Option<i64> {
+    Some(match oy {
+        None => x,
+        Some(y) => if x < y { x } else { y },
+    })
+}
+
+fn max_opt(x: i64, oy: Option<i64>) -> Option<i64> {
+    Some(match oy {
+        None => x,
+        Some(y) => if x > y { x } else { y },
+    })
 }
