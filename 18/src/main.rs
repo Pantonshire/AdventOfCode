@@ -63,7 +63,7 @@ fn eval_1(tokens: &[Token]) -> Option<u64> {
     fn eval_op(tokens: &[Token]) -> Option<(u64, usize)> {
         let (mut x, mut i) = eval_paren(tokens)?;
         loop {
-            match opt_slice(tokens, i).map(|tokens| eval_apply_op(tokens, x)).unnest() {
+            match opt_slice(tokens, i).and_then(|tokens| eval_apply_op(tokens, x)) {
                 None => return Some((x, i)),
                 Some((res, j)) => {
                     x = res;
@@ -105,7 +105,7 @@ fn eval_1(tokens: &[Token]) -> Option<u64> {
 fn eval_2(tokens: &[Token]) -> Option<u64> {
     fn eval_mul(tokens: &[Token]) -> Option<(u64, usize)> {
         let (lhs, i) = eval_plus(tokens)?;
-        match opt_slice(tokens, i).map(|ts| ts.first()).unnest() {
+        match opt_slice(tokens, i).and_then(|ts| ts.first()) {
             Some(Token::Mul) => eval_mul(opt_slice(tokens, i+1)?).map(|(rhs,j)| (lhs*rhs, i+1+j)),
             _ => Some((lhs, i)),
         }
@@ -113,7 +113,7 @@ fn eval_2(tokens: &[Token]) -> Option<u64> {
 
     fn eval_plus(tokens: &[Token]) -> Option<(u64, usize)> {
         let (lhs, i) = eval_paren(tokens)?;
-        match opt_slice(tokens, i).map(|ts| ts.first()).unnest() {
+        match opt_slice(tokens, i).and_then(|ts| ts.first()) {
             Some(Token::Add) => eval_plus(opt_slice(tokens, i+1)?).map(|(rhs,j)| (lhs+rhs, i+1+j)),
             _ => Some((lhs, i)),
         }
@@ -142,18 +142,5 @@ fn opt_slice<T>(s: &[T], i: usize) -> Option<&[T]> {
         Some(&s[i..])
     } else {
         None
-    }
-}
-
-trait Unnest<T> {
-    fn unnest(self) -> T;
-}
-
-impl<T> Unnest<Option<T>> for Option<Option<T>> {
-    fn unnest(self) -> Option<T> {
-        match self {
-            Some(x) => x,
-            None => None,
-        }
     }
 }
