@@ -18,13 +18,13 @@ fn main() {
         .expect("Tokenisation error");
 
     let part_1 = lines.iter()
-        .map(|ts| eval_1(&ts).expect(&format!("Parse error on {:?}", ts)))
+        .map(|ts| eval_1(&ts).expect("Parse error"))
         .sum::<u64>();
 
     println!("Part 1: {}", part_1);
 
     let part_2 = lines.iter()
-        .map(|ts| eval_2(&ts).expect(&format!("Parse error on {:?}", ts)))
+        .map(|ts| eval_2(&ts).expect("Parse error"))
         .sum::<u64>();
 
     println!("Part 2: {}", part_2);
