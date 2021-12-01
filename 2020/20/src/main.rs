@@ -106,6 +106,7 @@ fn read_pixel(c: char) -> Option<Pixel> {
     }
 }
 
+//TODO: I think this needs a "possible adjacency" cache to be performant (rcs and bcs in main.py)
 fn assemble_tile_grid(h: usize, w: usize, i: usize, grid: &Vec<(u64, usize)>, tiles: &Vec<u64>, trs: &HashMap<u64, Vec<Image>>, corners: (u64, u64, u64, u64)) -> Option<Vec<(u64, usize)>> {
     if i >= w * h {
         return Some(grid.clone());
