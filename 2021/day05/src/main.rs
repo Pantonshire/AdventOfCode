@@ -10,10 +10,6 @@ fn main() {
         .map(parse_line)
         .collect::<Vec<_>>();
 
-    // let lines1 = input.iter()
-    //     .filter(|(x1, y1, x2, y2)| x1 == x2 || y1 == y2)
-    //     .copied();
-
     println!("Part 1: {}", overlapping(lines.iter().filter(|(x1, y1, x2, y2)| x1 == x2 || y1 == y2).copied()));
     println!("Part 2: {}", overlapping(lines.into_iter()));
 }
@@ -22,7 +18,7 @@ fn overlapping<I>(lines: I) -> usize
 where
     I: Iterator<Item = (i32, i32, i32, i32)>,
 {
-    let mut points = HashSet::new();
+    let mut occupied = HashSet::new();
     let mut overlapped = HashSet::new();
     let mut c = 0;
 
@@ -33,11 +29,11 @@ where
         for i in 0..=((x2 - x1) * x_step).max((y2 - y1) * y_step) {
             let x = x1 + (x_step * i);
             let y = y1 + (y_step * i);
-            if points.contains(&(x, y)) && !overlapped.contains(&(x, y)) {
+            if occupied.contains(&(x, y)) && !overlapped.contains(&(x, y)) {
                 c += 1;
                 overlapped.insert((x, y));
             }
-            points.insert((x, y));
+            occupied.insert((x, y));
         }
     }
 
