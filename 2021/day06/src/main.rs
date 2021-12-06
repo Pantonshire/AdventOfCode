@@ -8,15 +8,12 @@ impl School {
     }
 
     fn update(&mut self) {
-        let mut next = [0u64; 9];
-        for i in 1..9 {
-            next[i - 1] = self.fish[i];
+        let spawned = self.fish[0];
+        for i in 0..8 {
+            self.fish[i] = self.fish[i + 1];
         }
-        next[6] += self.fish[0];
-        next[8] = self.fish[0];
-        for i in 0..9 {
-            self.fish[i] = next[i];
-        }
+        self.fish[6] += spawned;
+        self.fish[8] = spawned;
     }
 }
 
