@@ -20,8 +20,7 @@ impl School {
 fn main() {
     let fish = include_str!("input")
         .split(',')
-        .map(|s| s.parse::<u8>().unwrap())
-        .collect::<Vec<_>>();
+        .map(|s| s.parse::<u8>().unwrap());
 
     let mut initial = [0u64; 9];
     for f in fish {
