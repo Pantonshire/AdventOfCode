@@ -4,30 +4,25 @@ fn main() {
     let (dots_in, folds_in) = include_str!("input")
         .split_once("\n\n")
         .unwrap();
-    
-    let mut dots = Vec::new();
-    let mut folds = Vec::new();
 
-    for line in dots_in.lines() {
-        if line.is_empty() {
-            break;
-        }
+    let mut dots = dots_in.lines().filter(|line| !line.is_empty()).map(|line| {
         let (x, y) = line.split_once(',').unwrap();
-        let x = x.parse::<i32>().unwrap();
-        let y = y.parse::<i32>().unwrap();
-        dots.push((x, y));
-    }
+        let x = x.parse::<u16>().unwrap();
+        let y = y.parse::<u16>().unwrap();
+        (x, y)
+    }).collect::<Vec<_>>();
 
-    for fold in folds_in.lines() {
-        if fold.is_empty() {
-            break;
+    let folds = folds_in.lines().filter_map(|line| {
+        if line.is_empty() {
+            None
+        } else {
+            let fold = line.strip_prefix("fold along ").unwrap();
+            let (dir, n) = fold.split_once('=').unwrap();
+            let is_y = dir == "y";
+            let n = n.parse::<u16>().unwrap();
+            Some((is_y, n))
         }
-        let fold = fold.strip_prefix("fold along ").unwrap();
-        let (dir, n) = fold.split_once('=').unwrap();
-        let is_y = dir == "y";
-        let n = n.parse::<i32>().unwrap();
-        folds.push((is_y, n));
-    }
+    });
 
     let mut first = true;
 
@@ -43,6 +38,7 @@ fn main() {
                 }
             }
         }
+
         if first {
             first = false;
             println!("Part 1: {}", dots.iter().collect::<HashSet<_>>().len());
