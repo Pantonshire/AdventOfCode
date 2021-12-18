@@ -1,37 +1,33 @@
-use std::iter::Peekable;
 use std::fmt;
+use std::iter::Peekable;
+use std::ops;
 
 fn main() {
-    let pairs = include_str!("input_test")
+    let pairs = include_str!("input")
         .lines()
         .filter_map(|line| match line.trim() {
             s if s.is_empty() => None,
             s => Some(parse_pair(&mut s.chars().peekable())),
         })
         .collect::<Vec<_>>();
-
-    let mut sum = None;
-
-    for pair in pairs.clone() {
-        sum = match sum {
-            None => Some(pair),
-            Some(lhs) => Some(add_pairs(lhs, pair)),
-        };
-    }
     
-    println!("Part 1: {}", sum.unwrap().magnitude());
+    let max_magnitude = pairs.clone().into_iter().enumerate()
+        .map(|(i, lhs)| pairs.clone().into_iter().enumerate()
+            .filter(move |(j, _)| i != *j)
+            .map(move |(_, rhs)| (lhs.clone() + rhs).magnitude()))
+        .flatten()
+        .max()
+        .unwrap();
 
-    let mut max = 0;
-    for (i, lhs) in pairs.clone().into_iter().enumerate() {
-        for (_, rhs) in pairs.clone().into_iter().enumerate().filter(|(j, _)| i != *j) {
-            let sum = add_pairs(lhs.clone(), rhs).magnitude();
-            if sum > max {
-                max = sum;
-            }
+    let sum = pairs.into_iter().fold(None, |acc, rhs| {
+        match acc {
+            None => Some(rhs),
+            Some(lhs) => Some(lhs + rhs),
         }
-    }
+    }).unwrap();
 
-    println!("Part 2: {}", max);
+    println!("Part 1: {}", sum.magnitude());
+    println!("Part 2: {}", max_magnitude);
 }
 
 #[derive(Clone)]
@@ -40,21 +36,43 @@ struct Pair {
     right: Element,
 }
 
-impl fmt::Debug for Pair {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[{:?},{:?}]", self.left, self.right)
+impl Pair {
+    fn magnitude(&self) -> u64 {
+        3 * self.left.number_or_else(Self::magnitude)
+            + 2 * self.right.number_or_else(Self::magnitude)
+    }
+
+    fn leftmost(&mut self) -> &mut u64 {
+        match &mut self.left {
+            Element::Number(n) => n,
+            Element::Pair(pair) => pair.leftmost(),
+        }
+    }
+
+    fn rightmost(&mut self) -> &mut u64 {
+        match &mut self.right {
+            Element::Number(n) => n,
+            Element::Pair(pair) => pair.rightmost(),
+        }
     }
 }
 
-impl Pair {
-    fn magnitude(&self) -> u64 {
-        3 * match &self.left {
-            Element::Number(n) => *n,
-            Element::Pair(p) => p.magnitude(),
-        } + 2 * match &self.right {
-            Element::Number(n) => *n,
-            Element::Pair(p) => p.magnitude(),
-        }
+impl ops::Add for Pair {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut sum = Pair {
+            left: Element::new_pair(self),
+            right: Element::new_pair(rhs),
+        };
+        while explode_pair(&mut sum, 0).0 || split_pair(&mut sum) {}
+        sum
+    }
+}
+
+impl fmt::Debug for Pair {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{:?},{:?}]", self.left, self.right)
     }
 }
 
@@ -62,6 +80,39 @@ impl Pair {
 enum Element {
     Number(u64),
     Pair(Box<Pair>),
+}
+
+impl Element {
+    fn new_pair(pair: Pair) -> Self {
+        Element::Pair(Box::new(pair))
+    }
+
+    fn number_or_none(&self) -> Option<u64> {
+        match self {
+            Element::Number(n) => Some(*n),
+            Element::Pair(_) => None,
+        }
+    }
+
+    fn number_or_else<F>(&self, pair_fn: F) -> u64
+    where
+        F: FnOnce(&Pair) -> u64,
+    {
+        match self {
+            Element::Number(n) => *n,
+            Element::Pair(p) => pair_fn(p),
+        }
+    }
+
+    fn number_or_else_mut<F>(&mut self, pair_fn: F) -> &mut u64
+    where
+        F: FnOnce(&mut Pair) -> &mut u64,
+    {
+        match self {
+            Element::Number(n) => n,
+            Element::Pair(p) => pair_fn(p),
+        }
+    }
 }
 
 impl fmt::Debug for Element {
@@ -73,135 +124,65 @@ impl fmt::Debug for Element {
     }
 }
 
-fn add_pairs(lhs: Pair, rhs: Pair) -> Pair {
-    let mut sum = Pair {
-        left: Element::Pair(Box::new(lhs)),
-        right: Element::Pair(Box::new(rhs)),
-    };
-
-    println!("{:?}", sum);
-
-    loop {
-        if explode_pair(&mut sum, 0).0 {
-            println!("{:?}   (exploded)", sum);
-            continue;
-        }
-        if split(&mut sum) {
-            println!("{:?}   (split)", sum);
-            continue;
-        }
-        break;
-    }
-    
-    // println!("{:?}", sum);
-    // while explode_pair(&mut sum, 0).0 || split(&mut sum) {
-        // println!("= {:?}", sum);
-    // }
-
-    sum
+fn split_pair(pair: &mut Pair) -> bool {
+    split_element(&mut pair.left) || split_element(&mut pair.right)
 }
 
-fn split(pair: &mut Pair) -> bool {
-    match &mut pair.left {
-        Element::Number(n) => {
-            if *n >= 10 {
-                pair.left = Element::Pair(Box::new(Pair {
-                    left: Element::Number(*n / 2),
-                    right: Element::Number(*n - (*n / 2)),
-                }));
-                return true;
-            }
+fn split_element(element: &mut Element) -> bool {
+    match element {
+        Element::Number(n) if *n >= 10 => {
+            let half_floor = *n / 2;
+            let half_ceil = *n - half_floor;
+            *element = Element::new_pair(Pair {
+                left: Element::Number(half_floor),
+                right: Element::Number(half_ceil),
+            });
+            true
         },
-        Element::Pair(p) => {
-            if split(p) {
-                return true;
-            }
-        },
+        Element::Pair(p) => split_pair(p),
+        _ => false,
     }
-    match &mut pair.right {
-        Element::Number(n) => {
-            if *n >= 10 {
-                pair.right = Element::Pair(Box::new(Pair {
-                    left: Element::Number(*n / 2),
-                    right: Element::Number(*n - (*n / 2)),
-                }));
-                return true;
-            }
-        },
-        Element::Pair(p) => {
-            if split(p) {
-                return true;
-            }
-        },
-    }
-    return false;
 }
 
 fn explode_pair(pair: &mut Pair, depth: usize) -> (bool, Option<u64>, Option<u64>) {
-    let (cl, lel, ler) = explode(&mut pair.left, depth + 1);
-    if let Some(er) = ler {
-        *match &mut pair.right {
-            Element::Number(n) => n,
-            Element::Pair(p) => leftmost(p),
-        } += er;
+    let (changed_left, explode_left, explode_right) = explode_element(&mut pair.left, depth + 1);
+    if let Some(explode_right) = explode_right {
+        *pair.right.number_or_else_mut(Pair::leftmost) += explode_right;
     }
 
-    if cl {
-        return (true, lel, None);
+    if changed_left {
+        return (true, explode_left, None);
     }
 
-    let (cr, rel, rer) = explode(&mut pair.right, depth + 1);
-    if let Some(el) = rel {
-        *match &mut pair.left {
-            Element::Number(n) => n,
-            Element::Pair(p) => rightmost(p),
-        } += el;
+    let (changed_right, explode_left, explode_right) = explode_element(&mut pair.right, depth + 1);
+    if let Some(explode_left) = explode_left {
+        *pair.left.number_or_else_mut(Pair::rightmost) += explode_left;
     }
 
-    (cl || cr, lel, rer)
+    (changed_right, None, explode_right)
 }
 
-fn explode(element: &mut Element, depth: usize) -> (bool, Option<u64>, Option<u64>) {
+fn explode_element(element: &mut Element, depth: usize) -> (bool, Option<u64>, Option<u64>) {
     if let Element::Pair(pair) = element {
         if depth == 4 {
-            let left = if let Element::Number(lhs) = pair.left {
-                Some(lhs)
-            } else {
-                None
-            };
-            let right = if let Element::Number(rhs) = pair.right {
-                Some(rhs)
-            } else {
-                None
-            };
+            let left = pair.left.number_or_none();
+            let right = pair.right.number_or_none();
             *element = Element::Number(0);
             return (true, left, right);
         }
-
         explode_pair(pair, depth)
     } else {
         (false, None, None)
     }
 }
 
-fn rightmost(pair: &mut Pair) -> &mut u64 {
-    match &mut pair.right {
-        Element::Number(n) => n,
-        Element::Pair(pair) => rightmost(pair),
-    }
-}
-
-fn leftmost(pair: &mut Pair) -> &mut u64 {
-    match &mut pair.left {
-        Element::Number(n) => n,
-        Element::Pair(pair) => leftmost(pair),
-    }
-}
-
-fn parse_pair<I>(cs: &mut Peekable<I>) -> Pair where I: Iterator<Item = char> {
+fn parse_pair<I>(cs: &mut Peekable<I>) -> Pair
+where
+    I: Iterator<Item = char>,
+{
     cs.next();
     let left = match cs.peek().unwrap() {
-        '[' => Element::Pair(Box::new(parse_pair(cs))),
+        '[' => Element::new_pair(parse_pair(cs)),
         _ => {
             let c = cs.next().unwrap();
             Element::Number(c as u64 - 0x30)
